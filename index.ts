@@ -50,19 +50,28 @@ function merge(prePath: string, inputPath: string) {
 
         ffmpeg(prePath)
             .input(inputPath)
-            .on('error', reject)
+            .on('error', e => {
+                console.log(e);
+                resolve({
+                    success: false,
+                    msg: 'Internal Server Error'
+                });
+            })
             .on('start', () => {
                 console.log(`Starting merge for ${inputName}`);
             })
             .on('end', () => {
                 console.log(`${inputName} merged!`);
-                resolve();
+                resolve({
+                    success: true,
+                    path: join(FOLDERS.OUTPUT, inputName)
+                });
             })
             .mergeToFile(join(FOLDERS.OUTPUT, inputName), <any>FOLDERS.TEMP);
     });
 }
 
-module.exports = async function() {
+module.exports = async function(callback: function) {
     try {
         const prerollFiles = await fsPromises.readdir(FOLDERS.PREROLL);
 
@@ -96,9 +105,7 @@ module.exports = async function() {
             const iPath = join(FOLDERS.INPUT, i);
             const stat = await fsPromises.stat(iPath);
 
-            if (!stat.isDirectory()) {
-                await merge(<string>preroll, iPath);
-            }
+            if (!stat.isDirectory() && typeof callback == "function") callback(await merge(<string>preroll, iPath));
         }
     } catch (e: any) {
         onError(e);
