@@ -62,7 +62,7 @@ function merge(prePath: string, inputPath: string) {
     });
 }
 
-async function mergeAll() {
+module.exports = async function() {
     try {
         const prerollFiles = await fsPromises.readdir(FOLDERS.PREROLL);
 
@@ -104,5 +104,3 @@ async function mergeAll() {
         onError(e);
     }
 }
-
-mergeAll();
