@@ -1,14 +1,14 @@
-import ffmpeg from 'fluent-ffmpeg';
-import { promises as fsPromises } from 'fs';
-import { basename, join } from 'path';
+const ffmpeg = require('fluent-ffmpeg');
+const { promises: fsPromises } = require('fs');
+const { basename, join } = require('path');
 
 const ffmpegPath = require('@ffmpeg-installer/ffmpeg').path;
 const ffprobePath = require('@ffprobe-installer/ffprobe').path;
 const FOLDERS = {
-    PREROLL: './preroll',
-    INPUT: './input',
-    OUTPUT: './output',
-    TEMP: './temp'
+    PREROLL: './node_modules/preroll-merge/preroll',
+    INPUT: './node_modules/preroll-merge/input',
+    OUTPUT: './node_modules/preroll-merge/output',
+    TEMP: './node_modules/preroll-merge/temp'
 };
 const ERRORS = {
     PREROLL: 'Please add a preroll video to the preroll folder',
@@ -18,23 +18,23 @@ const ERRORS = {
 ffmpeg.setFfmpegPath(ffmpegPath);
 ffmpeg.setFfprobePath(ffprobePath);
 
-function isNil(obj: any) {
+function isNil(obj) {
     return obj === null || typeof obj === 'undefined';
 }
 
-function isEmpty(obj: any) {
+function isEmpty(obj) {
     return obj === '' || isNil(obj);
 }
 
-function isObject(obj: any) {
+function isObject(obj) {
     return obj != null && typeof obj === 'object';
 }
 
-function isArray(obj: any) {
+function isArray(obj) {
     return Object.prototype.toString.call(obj) === '[object Array]';
 }
 
-function onError(err: Error) {
+function onError(err) {
     if (isObject(err)) {
         console.error(`Error: ${err.message}`, '\n');
     } else {
@@ -44,8 +44,8 @@ function onError(err: Error) {
     process.exitCode = 1;
 }
 
-function merge(prePath: string, inputPath: string) {
-    return new Promise<void>((resolve, reject) => {
+function merge(prePath, inputPath) {
+    return new Promise((resolve, reject) => {
         const inputName = basename(inputPath);
 
         ffmpeg(prePath)
@@ -67,11 +67,11 @@ function merge(prePath: string, inputPath: string) {
                     path: join(FOLDERS.OUTPUT, inputName)
                 });
             })
-            .mergeToFile(join(FOLDERS.OUTPUT, inputName), <any>FOLDERS.TEMP);
+            .mergeToFile(join(FOLDERS.OUTPUT, inputName), FOLDERS.TEMP);
     });
 }
 
-module.exports = async function(callback: function) {
+module.exports = async function(callback) {
     try {
         const prerollFiles = await fsPromises.readdir(FOLDERS.PREROLL);
 
@@ -79,7 +79,7 @@ module.exports = async function(callback: function) {
             throw new Error(ERRORS.PREROLL);
         }
 
-        let preroll: string|undefined;
+        let preroll;
 
         for (const p of prerollFiles) {
             const apPath = join(FOLDERS.PREROLL, p);
@@ -105,9 +105,9 @@ module.exports = async function(callback: function) {
             const iPath = join(FOLDERS.INPUT, i);
             const stat = await fsPromises.stat(iPath);
 
-            if (!stat.isDirectory() && typeof callback == "function") callback(await merge(<string>preroll, iPath));
+            if (!stat.isDirectory() && typeof callback == "function") callback(await merge(preroll, iPath));
         }
-    } catch (e: any) {
+    } catch (e) {
         onError(e);
     }
 }
